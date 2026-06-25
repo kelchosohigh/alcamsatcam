@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knight Online - Gelişmiş Pazar Al-Sat Takip Sistemi v2.8</title>
+    <title>Knight Online - Gelişmiş Pazar Al-Sat Takip Sistemi v2.9</title>
     <style>
         :root {
             --bg-color: #0f1015;
@@ -215,9 +215,17 @@
             cursor: pointer;
             width: 100%;
             transition: background 0.2s, transform 0.1s;
+            margin-bottom: 10px;
         }
 
         .btn:hover { background-color: var(--accent-hover); }
+
+        .btn-backup {
+            background-color: #1e293b;
+            color: #38bdf8;
+            border: 1px solid #0284c7;
+        }
+        .btn-backup:hover { background-color: #0284c7; color: white; }
 
         .history-preview {
             background: #1c1e29;
@@ -347,7 +355,7 @@
 
 <div class="container">
     <header>
-        <h1>⚔️ Knight Online Pazar Portalı <span>v2.8 Dinamik Satış Vergisi</span></h1>
+        <h1>⚔️ Knight Online Pazar Portalı <span>v2.9 Online Bulut Yedekleme</span></h1>
         <div style="font-size: 14px; color: var(--text-muted);" id="liveClock"></div>
     </header>
 
@@ -365,11 +373,10 @@
             </select>
         </div>
         <div style="margin-left: auto; font-size: 13px; color: var(--accent-color); font-weight: 600;">
-            * Alışta vergi seçmiş olsanız bile, Satış butonuna bastığınızda elden satış (%0) seçeneğini uygulayabilirsiniz.
+            * Cihazlar arası veri taşımak için alttaki Bulut Yedekleme modülünü kullanabilirsin.
         </div>
     </div>
 
-    <!-- Dashboard -->
     <div class="dashboard-grid">
         <div class="stat-card gold">
             <div class="stat-label">Toplam Brüt Ciro (TL)</div>
@@ -394,37 +401,47 @@
     </div>
 
     <div class="workspace">
-        <!-- Form -->
-        <div class="panel">
-            <div class="panel-title">📦 Yeni İtem Girişi</div>
-            
-            <div class="input-block">
-                <label for="itemName">İtem Adı</label>
-                <input type="text" id="itemName" placeholder="Örn: Silvery Gem" oninput="checkLiveHistory()" autocomplete="off">
+        <div>
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-title">📦 Yeni İtem Girişi</div>
+                
+                <div class="input-block">
+                    <label for="itemName">İtem Adı</label>
+                    <input type="text" id="itemName" placeholder="Örn: Silvery Gem" oninput="checkLiveHistory()" autocomplete="off">
+                </div>
+
+                <div id="historyPreview" class="history-preview">
+                    <div class="history-preview-title">🛡️ Bu İtemin Geçmiş Kayıtları:</div>
+                    <div id="historyPreviewList"></div>
+                </div>
+
+                <div class="input-block">
+                    <label for="buyPrice">Tekil Alış Fiyatı (1 Adet İçin)</label>
+                    <input type="text" id="buyPrice" placeholder="Örn: 45m veya 78k500c" autocomplete="off">
+                </div>
+
+                <div class="input-block">
+                    <label for="itemQty">Adet / Alınan Miktar</label>
+                    <input type="number" id="itemQty" value="1" min="1">
+                </div>
+
+                <button class="btn" onclick="addNewItem()">Sisteme Kaydet</button>
             </div>
 
-            <div id="historyPreview" class="history-preview">
-                <div class="history-preview-title">🛡️ Bu İtemin Geçmiş Kayıtları:</div>
-                <div id="historyPreviewList"></div>
+            <div class="panel">
+                <div class="panel-title">☁️ Bulut Yedekleme & Transfer</div>
+                <button class="btn btn-backup" onclick="exportDataData()">Verileri Dışa Aktar (Yedek Al)</button>
+                
+                <div class="input-block" style="margin-top: 10px;">
+                    <label style="color: var(--text-muted); font-size:12px;">Yedek Dosyasını Yükle:</label>
+                    <input type="file" id="importFile" onchange="importDataData(event)" accept=".json" style="padding:5px; font-size:12px; background:var(--input-bg);">
+                </div>
             </div>
-
-            <div class="input-block">
-                <label for="buyPrice">Tekil Alış Fiyatı (1 Adet İçin)</label>
-                <input type="text" id="buyPrice" placeholder="Örn: 45m veya 78k500c" autocomplete="off">
-            </div>
-
-            <div class="input-block">
-                <label for="itemQty">Adet / Alınan Miktar</label>
-                <input type="number" id="itemQty" value="1" min="1">
-            </div>
-
-            <button class="btn" onclick="addNewItem()">Sisteme Kaydet</button>
         </div>
 
-        <!-- Tablo -->
         <div class="table-container">
             <div class="table-header-tools">
-                <div style="font-weight: bold; font-size: 15px; color: #fff;">📋 Al-Sat Günlüğü (Esnek Pazar Modlu)</div>
+                <div style="font-weight: bold; font-size: 15px; color: #fff;">📋 Al-Sat Günlüğü (Bulut Senkronlu)</div>
                 <input type="text" id="tableSearch" class="search-table" placeholder="İtem adıyla filtrele..." oninput="renderTable()">
             </div>
             
@@ -571,7 +588,7 @@
             taxPaid: 0,
             netProfit: null,
             tlProfit: null,
-            taxRateApplied: globalTaxPercent // İlk giriş vergisi
+            taxRateApplied: globalTaxPercent
         };
 
         pazarItems.push(newItem);
@@ -634,7 +651,6 @@
 
         const remaining = item.totalQty - item.soldQty;
 
-        // 1. Adet Sor
         const qtyInput = prompt(`"${item.name}" ürününden kaç adet satıyorsun? (Maksimum: ${remaining}):`, remaining);
         if (qtyInput === null || qtyInput.trim() === "") return;
         const sellQty = parseInt(qtyInput);
@@ -644,16 +660,13 @@
             return;
         }
 
-        // 2. Satış Vergi Türü Sor (Elden teslim seçeneği)
         const saleTaxInput = prompt(`Satış Pazar Türü Seçin:\n0 = Elden / Takas / Vergisiz (%0)\n1 = Menicia's List (%1)\n3 = Normal Pazar (%3)`, globalTaxPercent);
         if (saleTaxInput === null || saleTaxInput.trim() === "") return;
         const chosenTaxRate = parseInt(saleTaxInput) === 1 ? 1 : (parseInt(saleTaxInput) === 3 ? 3 : 0);
 
-        // 3. Fiyat Sor
         const sellInput = prompt(`1 ADET için Satış Fiyatını girin (Örn: 45m, 78k500c):`);
         if (sellInput === null || sellInput.trim() === "") return;
 
-        // 4. GB Kuru Sor
         const currentSellGbInput = prompt(`Satış anındaki 1 GB fiyatı kaç TL?`, gbPrice);
         if (currentSellGbInput === null || currentSellGbInput.trim() === "") return;
 
@@ -674,7 +687,7 @@
                 sellDate: dateString,
                 sellPrice: parsedSellPrice,
                 sellGbRate: parsedSellGbRate,
-                taxRateApplied: chosenTaxRate // Seçilen anlık satış vergisi uygulandı
+                taxRateApplied: chosenTaxRate
             };
 
             calculateItemFinances(soldPart);
@@ -685,7 +698,7 @@
             item.sellDate = dateString;
             item.sellPrice = parsedSellPrice;
             item.sellGbRate = parsedSellGbRate;
-            item.taxRateApplied = chosenTaxRate; // Seçilen anlık satış vergisi uygulandı
+            item.taxRateApplied = chosenTaxRate;
             calculateItemFinances(item);
         }
 
@@ -703,6 +716,45 @@
 
     function saveToLocalStorage() {
         localStorage.setItem('ko_pazar_items_v4', JSON.stringify(pazarItems));
+    }
+
+    function exportDataData() {
+        if(pazarItems.length === 0) {
+            alert("Dışa aktarılacak hiç pazar kaydı bulunmuyor.");
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(pazarItems));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "ko_pazar_yedek_" + new Date().toISOString().slice(0,10) + ".json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importDataData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (Array.isArray(importedData)) {
+                    if(confirm("Mevcut verilerin üzerine bu yedek eklenecektir. Onaylıyor musun?")) {
+                        pazarItems = importedData;
+                        saveToLocalStorage();
+                        updateCalculationsAndUI();
+                        alert("Yedek başarıyla yüklendi!");
+                    }
+                } else {
+                    alert("Hatalı dosya formatı!");
+                }
+            } catch (err) {
+                alert("Dosya okunurken bir hata oluştu.");
+            }
+        };
+        reader.readAsText(file);
     }
 
     function calculateStats() {
