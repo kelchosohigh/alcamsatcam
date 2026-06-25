@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knight Online - Gelişmiş Pazar Al-Sat Takip Sistemi v2.8</title>
+    <style>
+        :root {
+            --bg-color: #0f1015;
+            --panel-bg: #15171e;
+            --panel-header: #1d202b;
+            --text-color: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-color: #f59e0b; /* Gold */
+            --accent-hover: #d97706;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --border-color: #262936;
+            --input-bg: #1e212b;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: var(--accent-color);
+            margin: 0;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 span {
+            font-size: 14px;
+            color: var(--text-muted);
+            letter-spacing: 0;
+            text-transform: none;
+            background: #222533;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .config-bar {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .config-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .config-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .config-group input, .config-group select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 140px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background-color: var(--border-color);
+        }
+
+        .stat-card.profit::before { background-color: var(--success-color); }
+        .stat-card.expense::before { background-color: var(--danger-color); }
+        .stat-card.gold::before { background-color: var(--accent-color); }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .stat-subvalue {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .workspace {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .input-block {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .input-block label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .input-block input, .input-block select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 15px;
+            width: 100%;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: #121214;
+            border: none;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn:hover { background-color: var(--accent-hover); }
+
+        .history-preview {
+            background: #1c1e29;
+            border: 1px dashed var(--accent-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .history-preview-title {
+            font-size: 12px;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .history-item-row {
+            font-size: 12px;
+            border-bottom: 1px solid #262936;
+            padding: 4px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .table-container {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table-header-tools {
+            background-color: var(--panel-header);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-table {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 240px;
+        }
+
+        .table-wrapper { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: var(--panel-header);
+            color: var(--accent-color);
+            font-weight: 600;
+            padding: 14px 12px;
+            border-bottom: 2px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        tr:hover td { background-color: #1a1d26; }
+
+        .item-name-cell { font-weight: bold; color: #fff; }
+        .tag-tax {
+            font-size: 10px;
+            background: #291e1c;
+            color: #f97316;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .tag-kur {
+            font-size: 10px;
+            background: #1e293b;
+            color: #38bdf8;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-left: 3px;
+        }
+        .tag-qty {
+            font-size: 10px;
+            background: #166534;
+            color: #bbf7d0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+
+        .text-pos { color: var(--success-color); font-weight: bold; }
+        .text-neg { color: var(--danger-color); font-weight: bold; }
+
+        .btn-action {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-sell { background-color: var(--success-color); color: #0f1015; margin-right: 5px; }
+        .btn-edit { background-color: #222533; color: #cbd5e1; border: 1px solid #3b4252; margin-right: 5px; }
+        .btn-edit:hover { background-color: #3b4252; }
+        .btn-delete { background-color: #331c1c; color: var(--danger-color); border: 1px solid #552222; }
+
+        .empty-state { padding: 40px; text-align: center; color: var(--text-muted); font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>⚔️ Knight Online Pazar Portalı <span>v2.8 Dinamik Satış Vergisi</span></h1>
+        <div style="font-size: 14px; color: var(--text-muted);" id="liveClock"></div>
+    </header>
+
+    <div class="config-bar">
+        <div class="config-group">
+            <label for="gbRate">Varsayılan GB Satış Fiyatı (TL):</label>
+            <input type="number" id="gbRate" value="350" oninput="updateCalculationsAndUI()" min="1">
+        </div>
+        <div class="config-group">
+            <label for="taxMode">Giriş Pazar Türü (Alış Kaydı İçin):</label>
+            <select id="taxMode" onchange="updateCalculationsAndUI()">
+                <option value="3" selected>Normal Pazar (%3 Vergi)</option>
+                <option value="1">Menicia's Official List (%1 Vergi)</option>
+                <option value="0">Vergisiz / Elden Takas (%0)</option>
+            </select>
+        </div>
+        <div style="margin-left: auto; font-size: 13px; color: var(--accent-color); font-weight: 600;">
+            * Alışta vergi seçmiş olsanız bile, Satış butonuna bastığınızda elden satış (%0) seçeneğini uygulayabilirsiniz.
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard-grid">
+        <div class="stat-card gold">
+            <div class="stat-label">Toplam Brüt Ciro (TL)</div>
+            <div class="stat-value" id="statTotalSalesTl">0 TL</div>
+            <div class="stat-subvalue" id="statTotalSalesCoins">0 c</div>
+        </div>
+        <div class="stat-card profit">
+            <div class="stat-label">Gerçek Net Kâr (TL)</div>
+            <div class="stat-value text-pos" id="statTotalProfitTl">0 TL</div>
+            <div class="stat-subvalue" id="statTotalProfitCoins">0 c kâr</div>
+        </div>
+        <div class="stat-card expense">
+            <div class="stat-label">Stoktaki Malın TL Maliyeti</div>
+            <div class="stat-value" id="statStockValueTl">0 TL</div>
+            <div class="stat-subvalue" id="statStockCount">0 Çeşit Mal Stokta</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Ödenen Toplam Vergi (TL)</div>
+            <div class="stat-value" id="statTotalTaxTl" style="color: #f97316;">0 TL</div>
+            <div class="stat-subvalue" id="statTotalTaxCoins">0 c kesildi</div>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <!-- Form -->
+        <div class="panel">
+            <div class="panel-title">📦 Yeni İtem Girişi</div>
+            
+            <div class="input-block">
+                <label for="itemName">İtem Adı</label>
+                <input type="text" id="itemName" placeholder="Örn: Silvery Gem" oninput="checkLiveHistory()" autocomplete="off">
+            </div>
+
+            <div id="historyPreview" class="history-preview">
+                <div class="history-preview-title">🛡️ Bu İtemin Geçmiş Kayıtları:</div>
+                <div id="historyPreviewList"></div>
+            </div>
+
+            <div class="input-block">
+                <label for="buyPrice">Tekil Alış Fiyatı (1 Adet İçin)</label>
+                <input type="text" id="buyPrice" placeholder="Örn: 45m veya 78k500c" autocomplete="off">
+            </div>
+
+            <div class="input-block">
+                <label for="itemQty">Adet / Alınan Miktar</label>
+                <input type="number" id="itemQty" value="1" min="1">
+            </div>
+
+            <button class="btn" onclick="addNewItem()">Sisteme Kaydet</button>
+        </div>
+
+        <!-- Tablo -->
+        <div class="table-container">
+            <div class="table-header-tools">
+                <div style="font-weight: bold; font-size: 15px; color: #fff;">📋 Al-Sat Günlüğü (Esnek Pazar Modlu)</div>
+                <input type="text" id="tableSearch" class="search-table" placeholder="İtem adıyla filtrele..." oninput="renderTable()">
+            </div>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>İtem Adı</th>
+                            <th>Miktar (Stok)</th>
+                            <th>Alış Tarihi / Kuru</th>
+                            <th>Birim Alış Fiyatı</th>
+                            <th>Satış Tarihi / Kuru</th>
+                            <th>Birim Satış (Brüt)</th>
+                            <th>Toplam Vergi</th>
+                            <th>Toplam Coins Kârı</th>
+                            <th>Gerçek TL Kârı</th>
+                            <th style="text-align: center;">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pazarTableBody"></tbody>
+                </table>
+                <div id="emptyState" class="empty-state" style="display: none;">Veri bulunamadı.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let pazarItems = JSON.parse(localStorage.getItem('ko_pazar_items_v4')) || [];
+    let gbPrice = parseFloat(localStorage.getItem('ko_gb_price')) || 350;
+    let globalTaxPercent = parseInt(localStorage.getItem('ko_tax_percent')) || 3;
+
+    document.getElementById('gbRate').value = gbPrice;
+    document.getElementById('taxMode').value = globalTaxPercent;
+
+    setInterval(() => {
+        const d = new Date();
+        document.getElementById('liveClock').innerText = d.toLocaleDateString('tr-TR') + ' - ' + d.toLocaleTimeString('tr-TR');
+    }, 1000);
+
+    function parseShortcutValue(inputStr) {
+        if (!inputStr) return 0;
+        let clean = inputStr.toString().toLowerCase().replace(/,/g, '').replace(/\s+/g, '');
+        if (!isNaN(clean)) return parseFloat(clean) || 0;
+
+        let totalCoins = 0;
+        let gbMatch = clean.match(/([0-9.]+)\s*gb/);
+        if (gbMatch) {
+            totalCoins += parseFloat(gbMatch[1]) * 100000000;
+            clean = clean.replace(gbMatch[0], '');
+        }
+        let mMatch = clean.match(/([0-9.]+)\s*m/);
+        if (mMatch) {
+            totalCoins += parseFloat(mMatch[1]) * 1000000;
+            clean = clean.replace(mMatch[0], '');
+        }
+        let kMatch = clean.match(/([0-9.]+)\s*k/);
+        if (kMatch) {
+            totalCoins += parseFloat(kMatch[1]) * 1000;
+            clean = clean.replace(kMatch[0], '');
+        }
+        let cMatch = clean.match(/([0-9.]+)\s*(coins|c)/);
+        if (cMatch) {
+            totalCoins += parseFloat(cMatch[1]);
+            clean = clean.replace(cMatch[0], '');
+        }
+        let remainderMatch = clean.match(/([0-9.]+)/);
+        if (remainderMatch && !isNaN(remainderMatch[1])) {
+            totalCoins += parseFloat(remainderMatch[1]);
+        }
+
+        return totalCoins;
+    }
+
+    function formatCoins(value) {
+        if (value === null || value === undefined || isNaN(value)) return "-";
+        return Number(value).toLocaleString('tr-TR') + " c";
+    }
+
+    function updateCalculationsAndUI() {
+        gbPrice = parseFloat(document.getElementById('gbRate').value) || 0;
+        globalTaxPercent = parseInt(document.getElementById('taxMode').value) || 0;
+        
+        localStorage.setItem('ko_gb_price', gbPrice);
+        localStorage.setItem('ko_tax_percent', globalTaxPercent);
+
+        calculateStats();
+        renderTable();
+    }
+
+    function checkLiveHistory() {
+        const currentName = document.getElementById('itemName').value.trim().toLowerCase();
+        const previewPanel = document.getElementById('historyPreview');
+        const previewList = document.getElementById('historyPreviewList');
+
+        if (currentName.length < 2) {
+            previewPanel.style.display = 'none';
+            return;
+        }
+
+        const historicalMatches = pazarItems.filter(item => item.name.toLowerCase().includes(currentName));
+
+        if (historicalMatches.length > 0) {
+            previewPanel.style.display = 'block';
+            previewList.innerHTML = '';
+            
+            historicalMatches.slice(-3).reverse().forEach(item => {
+                let div = document.createElement('div');
+                div.className = 'history-item-row';
+                let sellInfo = item.sellPrice ? `${formatCoins(item.sellPrice)} x${item.soldQty}` : 'Stokta';
+                div.innerHTML = `<span>Alış: ${formatCoins(item.buyPrice)} (x${item.totalQty})</span> <span style="color:var(--accent-color)">→ ${sellInfo}</span>`;
+                previewList.appendChild(div);
+            });
+        } else {
+            previewPanel.style.display = 'none';
+        }
+    }
+
+    function addNewItem() {
+        const nameInput = document.getElementById('itemName').value.trim();
+        const buyInput = document.getElementById('buyPrice').value.trim();
+        const qtyInput = parseInt(document.getElementById('itemQty').value) || 1;
+
+        if (!nameInput || !buyInput) {
+            alert("Lütfen İtem Adı ve Alış Fiyatı alanlarını eksiksiz doldurun!");
+            return;
+        }
+
+        const parsedBuyPrice = parseShortcutValue(buyInput);
+        const rightNow = new Date();
+        const dateString = rightNow.toLocaleDateString('tr-TR') + " " + rightNow.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+
+        const newItem = {
+            id: Date.now(),
+            name: nameInput,
+            buyDate: dateString,
+            buyPrice: parsedBuyPrice,
+            buyGbRate: gbPrice,
+            totalQty: qtyInput,
+            soldQty: 0,
+            sellDate: null,
+            sellPrice: null,
+            sellGbRate: null,
+            taxPaid: 0,
+            netProfit: null,
+            tlProfit: null,
+            taxRateApplied: globalTaxPercent // İlk giriş vergisi
+        };
+
+        pazarItems.push(newItem);
+        saveToLocalStorage();
+        
+        document.getElementById('itemName').value = '';
+        document.getElementById('buyPrice').value = '';
+        document.getElementById('itemQty').value = '1';
+        document.getElementById('historyPreview').style.display = 'none';
+
+        updateCalculationsAndUI();
+    }
+
+    function calculateItemFinances(item) {
+        if (item.sellPrice !== null && item.soldQty > 0) {
+            let totalSellCoins = item.sellPrice * item.soldQty;
+            item.taxPaid = Math.floor(totalSellCoins * (item.taxRateApplied / 100));
+            item.netProfit = totalSellCoins - item.taxPaid - (item.buyPrice * item.soldQty);
+
+            let netSellCoins = totalSellCoins - item.taxPaid;
+            let sellValueInTl = (netSellCoins / 100000000) * item.sellGbRate;
+            let buyValueInTl = ((item.buyPrice * item.soldQty) / 100000000) * item.buyGbRate;
+            item.tlProfit = sellValueInTl - buyValueInTl;
+        } else {
+            item.taxPaid = 0;
+            item.netProfit = null;
+            item.tlProfit = null;
+        }
+    }
+
+    function editRecordPrices(id) {
+        const item = pazarItems.find(i => i.id === id);
+        if (!item) return;
+
+        const newBuyInput = prompt(`"${item.name}" için yeni TEKİL ALIŞ fiyatını girin (Mevcut: ${item.buyPrice.toLocaleString()} c):`);
+        if (newBuyInput !== null && newBuyInput.trim() !== "") {
+            item.buyPrice = parseShortcutValue(newBuyInput);
+        }
+
+        if (item.sellPrice !== null) {
+            const newSellInput = prompt(`"${item.name}" için yeni TEKİL SATIŞ fiyatını girin (Mevcut: ${item.sellPrice.toLocaleString()} c):`);
+            if (newSellInput !== null && newSellInput.trim() !== "") {
+                item.sellPrice = parseShortcutValue(newSellInput);
+            }
+            
+            const newTaxInput = prompt(`Satış Vergi Yüzdesini Değiştirin (0, 1 veya 3 girin):`, item.taxRateApplied);
+            if (newTaxInput !== null && newTaxInput.trim() !== "") {
+                item.taxRateApplied = parseInt(newTaxInput) || 0;
+            }
+        }
+
+        calculateItemFinances(item);
+        saveToLocalStorage();
+        updateCalculationsAndUI();
+    }
+
+    function markAsSold(id) {
+        const item = pazarItems.find(i => i.id === id);
+        if (!item) return;
+
+        const remaining = item.totalQty - item.soldQty;
+
+        // 1. Adet Sor
+        const qtyInput = prompt(`"${item.name}" ürününden kaç adet satıyorsun? (Maksimum: ${remaining}):`, remaining);
+        if (qtyInput === null || qtyInput.trim() === "") return;
+        const sellQty = parseInt(qtyInput);
+
+        if (isNaN(sellQty) || sellQty <= 0 || sellQty > remaining) {
+            alert("Geçersiz bir adet girdin!");
+            return;
+        }
+
+        // 2. Satış Vergi Türü Sor (Elden teslim seçeneği)
+        const saleTaxInput = prompt(`Satış Pazar Türü Seçin:\n0 = Elden / Takas / Vergisiz (%0)\n1 = Menicia's List (%1)\n3 = Normal Pazar (%3)`, globalTaxPercent);
+        if (saleTaxInput === null || saleTaxInput.trim() === "") return;
+        const chosenTaxRate = parseInt(saleTaxInput) === 1 ? 1 : (parseInt(saleTaxInput) === 3 ? 3 : 0);
+
+        // 3. Fiyat Sor
+        const sellInput = prompt(`1 ADET için Satış Fiyatını girin (Örn: 45m, 78k500c):`);
+        if (sellInput === null || sellInput.trim() === "") return;
+
+        // 4. GB Kuru Sor
+        const currentSellGbInput = prompt(`Satış anındaki 1 GB fiyatı kaç TL?`, gbPrice);
+        if (currentSellGbInput === null || currentSellGbInput.trim() === "") return;
+
+        const parsedSellPrice = parseShortcutValue(sellInput);
+        const parsedSellGbRate = parseFloat(currentSellGbInput) || gbPrice;
+        const rightNow = new Date();
+        const dateString = rightNow.toLocaleDateString('tr-TR') + " " + rightNow.toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'});
+
+        if (sellQty < remaining) {
+            const soldPart = {
+                id: Date.now(),
+                name: item.name,
+                buyDate: item.buyDate,
+                buyPrice: item.buyPrice,
+                buyGbRate: item.buyGbRate,
+                totalQty: sellQty,
+                soldQty: sellQty,
+                sellDate: dateString,
+                sellPrice: parsedSellPrice,
+                sellGbRate: parsedSellGbRate,
+                taxRateApplied: chosenTaxRate // Seçilen anlık satış vergisi uygulandı
+            };
+
+            calculateItemFinances(soldPart);
+            pazarItems.push(soldPart);
+            item.soldQty += sellQty;
+        } else {
+            item.soldQty += sellQty;
+            item.sellDate = dateString;
+            item.sellPrice = parsedSellPrice;
+            item.sellGbRate = parsedSellGbRate;
+            item.taxRateApplied = chosenTaxRate; // Seçilen anlık satış vergisi uygulandı
+            calculateItemFinances(item);
+        }
+
+        saveToLocalStorage();
+        updateCalculationsAndUI();
+    }
+
+    function deleteRecord(id) {
+        if (confirm("Bu kaydı kalıcı olarak silmek istediğinden emin misin?")) {
+            pazarItems = pazarItems.filter(i => i.id !== id);
+            saveToLocalStorage();
+            updateCalculationsAndUI();
+        }
+    }
+
+    function saveToLocalStorage() {
+        localStorage.setItem('ko_pazar_items_v4', JSON.stringify(pazarItems));
+    }
+
+    function calculateStats() {
+        let totalSalesCoins = 0;
+        let totalSalesTl = 0;
+        let totalProfitCoins = 0;
+        let totalProfitTl = 0;
+        let stockValueTl = 0;
+        let stockCount = 0;
+        let totalTaxCoins = 0;
+        let totalTaxTl = 0;
+
+        pazarItems.forEach(item => {
+            let remaining = item.totalQty - item.soldQty;
+            
+            if (item.soldQty > 0 && item.sellPrice !== null) {
+                let totalSellCoins = item.sellPrice * item.soldQty;
+                totalSalesCoins += totalSellCoins;
+                totalSalesTl += (totalSellCoins / 100000000) * item.sellGbRate;
+                
+                totalProfitCoins += item.netProfit || 0;
+                totalProfitTl += item.tlProfit || 0;
+                
+                totalTaxCoins += item.taxPaid || 0;
+                totalTaxTl += ((item.taxPaid || 0) / 100000000) * item.sellGbRate;
+            }
+            
+            if (remaining > 0) {
+                stockValueTl += ((item.buyPrice * remaining) / 100000000) * item.buyGbRate;
+                stockCount++;
+            }
+        });
+
+        document.getElementById('statTotalSalesTl').innerText = totalSalesTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
+        document.getElementById('statTotalSalesCoins').innerText = formatCoins(totalSalesCoins);
+        document.getElementById('statTotalProfitTl').innerText = totalProfitTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
+        document.getElementById('statTotalProfitCoins').innerText = formatCoins(totalProfitCoins) + " net c";
+        document.getElementById('statStockValueTl').innerText = stockValueTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
+        document.getElementById('statStockCount').innerText = `${stockCount} Çeşit Mal Sırada`;
+        document.getElementById('statTotalTaxTl').innerText = totalTaxTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
+        document.getElementById('statTotalTaxCoins').innerText = formatCoins(totalTaxCoins);
+
+        if (totalProfitTl >= 0) {
+            document.getElementById('statTotalProfitTl').className = "stat-value text-pos";
+        } else {
+            document.getElementById('statTotalProfitTl').className = "stat-value text-neg";
+        }
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('pazarTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const searchQuery = document.getElementById('tableSearch').value.trim().toLowerCase();
+        
+        tbody.innerHTML = '';
+
+        const filteredItems = pazarItems.filter(item => item.name.toLowerCase().includes(searchQuery));
+
+        if (filteredItems.length === 0) {
+            emptyState.style.display = 'block';
+            return;
+        } else {
+            emptyState.style.display = 'none';
+        }
+
+        filteredItems.slice().reverse().forEach(item => {
+            const tr = document.createElement('tr');
+            let isFullySold = item.soldQty === item.totalQty;
+            let remaining = item.totalQty - item.soldQty;
+
+            let coinsProfitClass = item.netProfit > 0 ? "text-pos" : (item.netProfit < 0 ? "text-neg" : "");
+            let tlProfitClass = item.tlProfit > 0 ? "text-pos" : (item.tlProfit < 0 ? "text-neg" : "");
+            
+            let taxBadge = item.sellPrice !== null ? `<br><span class="tag-tax">%${item.taxRateApplied} Vergi</span>` : '';
+            let buyGbBadge = `<br><span class="tag-kur">1 GB = ${item.buyGbRate} TL</span>`;
+            let sellGbBadge = item.sellPrice !== null ? `<br><span class="tag-kur">1 GB = ${item.sellGbRate} TL</span>` : '';
+            
+            let qtyString = isFullySold ? `${item.totalQty} Adet (Bitti)` : `${item.soldQty} / ${item.totalQty} <span class="tag-qty">Stok: ${remaining}</span>`;
+
+            tr.innerHTML = `
+                <td class="item-name-cell">${item.name}</td>
+                <td>${qtyString}</td>
+                <td><span style="color: var(--text-muted);">${item.buyDate}</span>${buyGbBadge}</td>
+                <td style="font-weight: 500;">${formatCoins(item.buyPrice)}</td>
+                <td><span style="color: var(--text-muted);">${item.sellDate || "-"}</span>${sellGbBadge}</td>
+                <td style="font-weight: 500;">${item.sellPrice ? formatCoins(item.sellPrice) : "-"}</td>
+                <td style="color: #f97316;">${item.sellPrice ? formatCoins(item.taxPaid) + taxBadge : "-"}</td>
+                <td class="${coinsProfitClass}">${item.netProfit !== null ? formatCoins(item.netProfit) : "-"}</td>
+                <td class="${tlProfitClass}">${item.tlProfit !== null ? item.tlProfit.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL" : "-"}</td>
+                <td style="text-align: center;">
+                    ${remaining > 0 ? `<button class="btn-action btn-sell" onclick="markAsSold(${item.id})">Satış Gir</button>` : ''}
+                    <button class="btn-action btn-edit" onclick="editRecordPrices(${item.id})">Düzenle</button>
+                    <button class="btn-action btn-delete" onclick="deleteRecord(${item.id})">Sil</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    updateCalculationsAndUI();
+</script>
+
+</body>
+</html>
