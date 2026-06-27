@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knight Online - Gelişmiş Pazar Al-Sat Takip Sistemi v3.0</title>
+    <title>Knight Online - Gelişmiş Pazar Al-Sat Takip Sistemi v3.2</title>
     <style>
         :root {
             --bg-color: #0f1015;
@@ -333,7 +333,7 @@
             margin-left: 4px;
         }
         .tag-main-share {
-            font-size: 11px;
+            font-size: 10px;
             background: #0c4a6e;
             color: #7dd3fc;
             padding: 1px 4px;
@@ -343,9 +343,23 @@
             margin-top: 4px;
         }
 
+        .main-share-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .main-share-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #38bdf8;
+        }
+
         .text-pos { color: var(--success-color); font-weight: bold; }
         .text-neg { color: var(--danger-color); font-weight: bold; }
         .text-main { color: #38bdf8; font-weight: bold; }
+        .text-crossed { text-decoration: line-through; opacity: 0.5; }
 
         .btn-action {
             padding: 6px 12px;
@@ -367,7 +381,7 @@
 
 <div class="container">
     <header>
-        <h1>⚔️ Knight Online Pazar Portalı <span>v3.0 Ana Karakter Paylaşım Modülü</span></h1>
+        <h1>⚔️ Knight Online Pazar Portalı <span>v3.2 Temiz Vergi Düzeni</span></h1>
         <div style="font-size: 14px; color: var(--text-muted);" id="liveClock"></div>
     </header>
 
@@ -380,7 +394,6 @@
             <label for="taxMode">Giriş Pazar Türü:</label>
             <select id="taxMode" onchange="updateCalculationsAndUI()">
                 <option value="3" selected>Normal Pazar (%3 Vergi)</option>
-                <option value="1">Menicia's Official List (%1 Vergi)</option>
                 <option value="0">Vergisiz / Elden Takas (%0)</option>
             </select>
         </div>
@@ -388,8 +401,8 @@
             <label for="mainCharPercent">Ana Karakter Payı (%):</label>
             <input type="number" id="mainCharPercent" value="15" oninput="updateCalculationsAndUI()" min="0" max="100">
         </div>
-        <div style="margin-left: auto; font-size: 13px; color: var(--accent-color); font-weight: 600;">
-            * Kâr kütüğünden otomatik %15 (veya belirlediğin oranda) "Ana Karakter Vergisi" hesaplanır.
+        <div style="margin-left: auto; font-size: 13px; color: #38bdf8; font-weight: 600;">
+            * Sağdaki kutuyu işaretlediklerin üstteki "Kalan Borç" panelinden anında düşer!
         </div>
     </div>
 
@@ -406,7 +419,7 @@
             <div class="stat-subvalue" id="statTotalProfitCoins">0 c kâr</div>
         </div>
         <div class="stat-card main-char">
-            <div class="stat-label">Ana Karaktere Verilecek Toplam (TL)</div>
+            <div class="stat-label">Ana Karaktere Kalan Borç (TL)</div>
             <div class="stat-value text-main" id="statMainCharTl">0 TL</div>
             <div class="stat-subvalue" id="statMainCharCoins">0 c aktarılacak</div>
         </div>
@@ -461,7 +474,7 @@
         <!-- Tablo -->
         <div class="table-container">
             <div class="table-header-tools">
-                <div style="font-weight: bold; font-size: 15px; color: #fff;">📋 Al-Sat Günlüğü (Karakter Payı Entegreli)</div>
+                <div style="font-weight: bold; font-size: 15px; color: #fff;">📋 Al-Sat Günlüğü & Karakter Paylaşımı</div>
                 <input type="text" id="tableSearch" class="search-table" placeholder="İtem adıyla filtrele..." oninput="renderTable()">
             </div>
             
@@ -478,7 +491,7 @@
                             <th>Oyun Vergisi</th>
                             <th>Net Coins Kârı</th>
                             <th>Net Pazar Kârı (TL)</th>
-                            <th style="color: #38bdf8;">Ana Karakter Payı</th>
+                            <th style="color: #38bdf8;">Ana Karakter Payı / Durum</th>
                             <th style="text-align: center;">İşlemler</th>
                         </tr>
                     </thead>
@@ -491,10 +504,13 @@
 </div>
 
 <script>
-    let pazarItems = JSON.parse(localStorage.getItem('ko_pazar_items_v4')) || [];
+    let pazarItems = JSON.parse(localStorage.getItem('ko_pazar_items_v5')) || [];
     let gbPrice = parseFloat(localStorage.getItem('ko_gb_price')) || 350;
     let globalTaxPercent = parseInt(localStorage.getItem('ko_tax_percent')) || 3;
     let mainCharPercent = parseFloat(localStorage.getItem('ko_main_char_percent')) || 15;
+
+    // Eğer eski veriden Menicia (%1) kalmışsa temizlemek için küçük bir güvenlik kontrolü
+    if (globalTaxPercent === 1) globalTaxPercent = 3;
 
     document.getElementById('gbRate').value = gbPrice;
     document.getElementById('taxMode').value = globalTaxPercent;
@@ -556,6 +572,13 @@
         pazarItems.forEach(item => {
             if (item.mainCharPercentApplied === undefined) {
                 item.mainCharPercentApplied = mainCharPercent;
+            }
+            if (item.isPaidToMain === undefined) {
+                item.isPaidToMain = false;
+            }
+            // Eski %1'lik vergi kayıtları varsa otomatik %3'e ya da %0'a çek
+            if (item.taxRateApplied === 1) {
+                item.taxRateApplied = 3;
             }
             calculateItemFinances(item);
         });
@@ -623,7 +646,8 @@
             taxRateApplied: globalTaxPercent,
             mainCharPercentApplied: mainCharPercent,
             mainCharCoinsShare: 0,
-            mainCharTlShare: 0
+            mainCharTlShare: 0,
+            isPaidToMain: false
         };
 
         pazarItems.push(newItem);
@@ -640,6 +664,9 @@
     function calculateItemFinances(item) {
         if (item.mainCharPercentApplied === undefined) {
             item.mainCharPercentApplied = mainCharPercent;
+        }
+        if (item.isPaidToMain === undefined) {
+            item.isPaidToMain = false;
         }
 
         if (item.sellPrice !== null && item.soldQty > 0) {
@@ -668,6 +695,16 @@
         }
     }
 
+    function togglePaidStatus(id, checked) {
+        const item = pazarItems.find(i => i.id === id);
+        if (item) {
+            item.isPaidToMain = checked;
+            saveToLocalStorage();
+            calculateStats();
+            renderTable();
+        }
+    }
+
     function editRecordPrices(id) {
         const item = pazarItems.find(i => i.id === id);
         if (!item) return;
@@ -683,9 +720,10 @@
                 item.sellPrice = parseShortcutValue(newSellInput);
             }
             
-            const newTaxInput = prompt(`Satış Vergi Yüzdesini Değiştirin (0, 1 veya 3 girin):`, item.taxRateApplied);
+            const newTaxInput = prompt(`Satış Vergi Yüzdesini Değiştirin (0 veya 3 girin):`, item.taxRateApplied);
             if (newTaxInput !== null && newTaxInput.trim() !== "") {
-                item.taxRateApplied = parseInt(newTaxInput) || 0;
+                let val = parseInt(newTaxInput);
+                item.taxRateApplied = (val === 0) ? 0 : 3;
             }
 
             const newMainPercentInput = prompt(`Bu satış için Ana Karakter Payı Yüzdesini Değiştirin (%):`, item.mainCharPercentApplied);
@@ -714,9 +752,9 @@
             return;
         }
 
-        const saleTaxInput = prompt(`Satış Pazar Türü Seçin:\n0 = Elden / Takas / Vergisiz (%0)\n1 = Menicia's List (%1)\n3 = Normal Pazar (%3)`, globalTaxPercent);
+        const saleTaxInput = prompt(`Satış Pazar Türü Seçin:\n0 = Elden / Takas / Vergisiz (%0)\n3 = Normal Pazar (%3)`, globalTaxPercent);
         if (saleTaxInput === null || saleTaxInput.trim() === "") return;
-        const chosenTaxRate = parseInt(saleTaxInput) === 1 ? 1 : (parseInt(saleTaxInput) === 3 ? 3 : 0);
+        const chosenTaxRate = parseInt(saleTaxInput) === 0 ? 0 : 3;
 
         const sellInput = prompt(`1 ADET için Satış Fiyatını girin (Örn: 45m, 78k500c):`);
         if (sellInput === null || sellInput.trim() === "") return;
@@ -742,7 +780,8 @@
                 sellPrice: parsedSellPrice,
                 sellGbRate: parsedSellGbRate,
                 taxRateApplied: chosenTaxRate,
-                mainCharPercentApplied: mainCharPercent
+                mainCharPercentApplied: mainCharPercent,
+                isPaidToMain: false
             };
 
             calculateItemFinances(soldPart);
@@ -771,7 +810,7 @@
     }
 
     function saveToLocalStorage() {
-        localStorage.setItem('ko_pazar_items_v4', JSON.stringify(pazarItems));
+        localStorage.setItem('ko_pazar_items_v5', JSON.stringify(pazarItems));
     }
 
     function exportDataData() {
@@ -820,8 +859,8 @@
         let totalProfitTl = 0;
         let stockValueTl = 0;
         let stockCount = 0;
-        let totalMainCharCoins = 0;
-        let totalMainCharTl = 0;
+        let totalMainCharCoinsRemaining = 0;
+        let totalMainCharTlRemaining = 0;
 
         pazarItems.forEach(item => {
             let remaining = item.totalQty - item.soldQty;
@@ -834,8 +873,10 @@
                 totalProfitCoins += item.netProfit || 0;
                 totalProfitTl += item.tlProfit || 0;
 
-                totalMainCharCoins += item.mainCharCoinsShare || 0;
-                totalMainCharTl += item.mainCharTlShare || 0;
+                if (!item.isPaidToMain) {
+                    totalMainCharCoinsRemaining += item.mainCharCoinsShare || 0;
+                    totalMainCharTlRemaining += item.mainCharTlShare || 0;
+                }
             }
             
             if (remaining > 0) {
@@ -849,8 +890,8 @@
         document.getElementById('statTotalProfitTl').innerText = totalProfitTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
         document.getElementById('statTotalProfitCoins').innerText = formatCoins(totalProfitCoins) + " net c";
         
-        document.getElementById('statMainCharTl').innerText = totalMainCharTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
-        document.getElementById('statMainCharCoins').innerText = formatCoins(totalMainCharCoins);
+        document.getElementById('statMainCharTl').innerText = totalMainCharTlRemaining.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
+        document.getElementById('statMainCharCoins').innerText = formatCoins(totalMainCharCoinsRemaining);
         
         document.getElementById('statStockValueTl').innerText = stockValueTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
         document.getElementById('statStockCount').innerText = `${stockCount} Çeşit Mal Sırada`;
@@ -894,9 +935,19 @@
 
             let mainCharShareString = "-";
             if (item.sellPrice !== null && item.netProfit > 0) {
-                mainCharShareString = `<div class="text-main">${formatCoins(item.mainCharCoinsShare)}</div>
-                                       <div style="font-size:12px; color:var(--text-muted);">${item.mainCharTlShare.toLocaleString('tr-TR', {maximumFractionDigits:2})} TL</div>
-                                       <span class="tag-main-share">%${item.mainCharPercentApplied} Pay</span>`;
+                let isChecked = item.isPaidToMain ? "checked" : "";
+                let textClass = item.isPaidToMain ? "text-crossed" : "";
+                
+                mainCharShareString = `
+                    <div class="main-share-container">
+                        <input type="checkbox" class="main-share-checkbox" ${isChecked} onchange="togglePaidStatus(${item.id}, this.checked)">
+                        <div class="${textClass}">
+                            <div class="text-main" style="${item.isPaidToMain ? 'color:var(--text-muted);' : ''}">${formatCoins(item.mainCharCoinsShare)}</div>
+                            <div style="font-size:12px; color:var(--text-muted);">${item.mainCharTlShare.toLocaleString('tr-TR', {maximumFractionDigits:2})} TL</div>
+                            <span class="tag-main-share" style="${item.isPaidToMain ? 'background:#2d3748; color:#a0aec0;' : ''}">%${item.mainCharPercentApplied} Pay</span>
+                        </div>
+                    </div>
+                `;
             }
 
             tr.innerHTML = `
