@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knight Online - Gelişmiş Pazar Al-Sat Takip Sistemi v2.9</title>
+    <title>Knight Online - Gelişmiş Pazar Al-Sat Takip Sistemi v3.0</title>
     <style>
         :root {
             --bg-color: #0f1015;
@@ -33,7 +33,7 @@
         }
 
         .container {
-            max-width: 1500px;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
@@ -130,6 +130,7 @@
         .stat-card.profit::before { background-color: var(--success-color); }
         .stat-card.expense::before { background-color: var(--danger-color); }
         .stat-card.gold::before { background-color: var(--accent-color); }
+        .stat-card.main-char::before { background-color: #38bdf8; }
 
         .stat-label {
             font-size: 12px;
@@ -331,9 +332,20 @@
             border-radius: 4px;
             margin-left: 4px;
         }
+        .tag-main-share {
+            font-size: 11px;
+            background: #0c4a6e;
+            color: #7dd3fc;
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 4px;
+        }
 
         .text-pos { color: var(--success-color); font-weight: bold; }
         .text-neg { color: var(--danger-color); font-weight: bold; }
+        .text-main { color: #38bdf8; font-weight: bold; }
 
         .btn-action {
             padding: 6px 12px;
@@ -355,7 +367,7 @@
 
 <div class="container">
     <header>
-        <h1>⚔️ Knight Online Pazar Portalı <span>v2.9 Online Bulut Yedekleme</span></h1>
+        <h1>⚔️ Knight Online Pazar Portalı <span>v3.0 Ana Karakter Paylaşım Modülü</span></h1>
         <div style="font-size: 14px; color: var(--text-muted);" id="liveClock"></div>
     </header>
 
@@ -365,18 +377,23 @@
             <input type="number" id="gbRate" value="350" oninput="updateCalculationsAndUI()" min="1">
         </div>
         <div class="config-group">
-            <label for="taxMode">Giriş Pazar Türü (Alış Kaydı İçin):</label>
+            <label for="taxMode">Giriş Pazar Türü:</label>
             <select id="taxMode" onchange="updateCalculationsAndUI()">
                 <option value="3" selected>Normal Pazar (%3 Vergi)</option>
                 <option value="1">Menicia's Official List (%1 Vergi)</option>
                 <option value="0">Vergisiz / Elden Takas (%0)</option>
             </select>
         </div>
+        <div class="config-group">
+            <label for="mainCharPercent">Ana Karakter Payı (%):</label>
+            <input type="number" id="mainCharPercent" value="15" oninput="updateCalculationsAndUI()" min="0" max="100">
+        </div>
         <div style="margin-left: auto; font-size: 13px; color: var(--accent-color); font-weight: 600;">
-            * Cihazlar arası veri taşımak için alttaki Bulut Yedekleme modülünü kullanabilirsin.
+            * Kâr kütüğünden otomatik %15 (veya belirlediğin oranda) "Ana Karakter Vergisi" hesaplanır.
         </div>
     </div>
 
+    <!-- Dashboard -->
     <div class="dashboard-grid">
         <div class="stat-card gold">
             <div class="stat-label">Toplam Brüt Ciro (TL)</div>
@@ -384,23 +401,24 @@
             <div class="stat-subvalue" id="statTotalSalesCoins">0 c</div>
         </div>
         <div class="stat-card profit">
-            <div class="stat-label">Gerçek Net Kâr (TL)</div>
+            <div class="stat-label">Net Pazar Kârı (TL)</div>
             <div class="stat-value text-pos" id="statTotalProfitTl">0 TL</div>
             <div class="stat-subvalue" id="statTotalProfitCoins">0 c kâr</div>
+        </div>
+        <div class="stat-card main-char">
+            <div class="stat-label">Ana Karaktere Verilecek Toplam (TL)</div>
+            <div class="stat-value text-main" id="statMainCharTl">0 TL</div>
+            <div class="stat-subvalue" id="statMainCharCoins">0 c aktarılacak</div>
         </div>
         <div class="stat-card expense">
             <div class="stat-label">Stoktaki Malın TL Maliyeti</div>
             <div class="stat-value" id="statStockValueTl">0 TL</div>
             <div class="stat-subvalue" id="statStockCount">0 Çeşit Mal Stokta</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-label">Ödenen Toplam Vergi (TL)</div>
-            <div class="stat-value" id="statTotalTaxTl" style="color: #f97316;">0 TL</div>
-            <div class="stat-subvalue" id="statTotalTaxCoins">0 c kesildi</div>
-        </div>
     </div>
 
     <div class="workspace">
+        <!-- Form -->
         <div>
             <div class="panel" style="margin-bottom: 20px;">
                 <div class="panel-title">📦 Yeni İtem Girişi</div>
@@ -428,6 +446,7 @@
                 <button class="btn" onclick="addNewItem()">Sisteme Kaydet</button>
             </div>
 
+            <!-- Yedekleme Paneli -->
             <div class="panel">
                 <div class="panel-title">☁️ Bulut Yedekleme & Transfer</div>
                 <button class="btn btn-backup" onclick="exportDataData()">Verileri Dışa Aktar (Yedek Al)</button>
@@ -439,9 +458,10 @@
             </div>
         </div>
 
+        <!-- Tablo -->
         <div class="table-container">
             <div class="table-header-tools">
-                <div style="font-weight: bold; font-size: 15px; color: #fff;">📋 Al-Sat Günlüğü (Bulut Senkronlu)</div>
+                <div style="font-weight: bold; font-size: 15px; color: #fff;">📋 Al-Sat Günlüğü (Karakter Payı Entegreli)</div>
                 <input type="text" id="tableSearch" class="search-table" placeholder="İtem adıyla filtrele..." oninput="renderTable()">
             </div>
             
@@ -452,12 +472,13 @@
                             <th>İtem Adı</th>
                             <th>Miktar (Stok)</th>
                             <th>Alış Tarihi / Kuru</th>
-                            <th>Birim Alış Fiyatı</th>
+                            <th>Birim Alış</th>
                             <th>Satış Tarihi / Kuru</th>
                             <th>Birim Satış (Brüt)</th>
-                            <th>Toplam Vergi</th>
-                            <th>Toplam Coins Kârı</th>
-                            <th>Gerçek TL Kârı</th>
+                            <th>Oyun Vergisi</th>
+                            <th>Net Coins Kârı</th>
+                            <th>Net Pazar Kârı (TL)</th>
+                            <th style="color: #38bdf8;">Ana Karakter Payı</th>
                             <th style="text-align: center;">İşlemler</th>
                         </tr>
                     </thead>
@@ -473,9 +494,11 @@
     let pazarItems = JSON.parse(localStorage.getItem('ko_pazar_items_v4')) || [];
     let gbPrice = parseFloat(localStorage.getItem('ko_gb_price')) || 350;
     let globalTaxPercent = parseInt(localStorage.getItem('ko_tax_percent')) || 3;
+    let mainCharPercent = parseFloat(localStorage.getItem('ko_main_char_percent')) || 15;
 
     document.getElementById('gbRate').value = gbPrice;
     document.getElementById('taxMode').value = globalTaxPercent;
+    document.getElementById('mainCharPercent').value = mainCharPercent;
 
     setInterval(() => {
         const d = new Date();
@@ -524,9 +547,18 @@
     function updateCalculationsAndUI() {
         gbPrice = parseFloat(document.getElementById('gbRate').value) || 0;
         globalTaxPercent = parseInt(document.getElementById('taxMode').value) || 0;
+        mainCharPercent = parseFloat(document.getElementById('mainCharPercent').value) || 0;
         
         localStorage.setItem('ko_gb_price', gbPrice);
         localStorage.setItem('ko_tax_percent', globalTaxPercent);
+        localStorage.setItem('ko_main_char_percent', mainCharPercent);
+
+        pazarItems.forEach(item => {
+            if (item.mainCharPercentApplied === undefined) {
+                item.mainCharPercentApplied = mainCharPercent;
+            }
+            calculateItemFinances(item);
+        });
 
         calculateStats();
         renderTable();
@@ -588,7 +620,10 @@
             taxPaid: 0,
             netProfit: null,
             tlProfit: null,
-            taxRateApplied: globalTaxPercent
+            taxRateApplied: globalTaxPercent,
+            mainCharPercentApplied: mainCharPercent,
+            mainCharCoinsShare: 0,
+            mainCharTlShare: 0
         };
 
         pazarItems.push(newItem);
@@ -603,6 +638,10 @@
     }
 
     function calculateItemFinances(item) {
+        if (item.mainCharPercentApplied === undefined) {
+            item.mainCharPercentApplied = mainCharPercent;
+        }
+
         if (item.sellPrice !== null && item.soldQty > 0) {
             let totalSellCoins = item.sellPrice * item.soldQty;
             item.taxPaid = Math.floor(totalSellCoins * (item.taxRateApplied / 100));
@@ -612,10 +651,20 @@
             let sellValueInTl = (netSellCoins / 100000000) * item.sellGbRate;
             let buyValueInTl = ((item.buyPrice * item.soldQty) / 100000000) * item.buyGbRate;
             item.tlProfit = sellValueInTl - buyValueInTl;
+
+            if (item.netProfit > 0) {
+                item.mainCharCoinsShare = Math.floor(item.netProfit * (item.mainCharPercentApplied / 100));
+                item.mainCharTlShare = item.tlProfit * (item.mainCharPercentApplied / 100);
+            } else {
+                item.mainCharCoinsShare = 0;
+                item.mainCharTlShare = 0;
+            }
         } else {
             item.taxPaid = 0;
             item.netProfit = null;
             item.tlProfit = null;
+            item.mainCharCoinsShare = 0;
+            item.mainCharTlShare = 0;
         }
     }
 
@@ -637,6 +686,11 @@
             const newTaxInput = prompt(`Satış Vergi Yüzdesini Değiştirin (0, 1 veya 3 girin):`, item.taxRateApplied);
             if (newTaxInput !== null && newTaxInput.trim() !== "") {
                 item.taxRateApplied = parseInt(newTaxInput) || 0;
+            }
+
+            const newMainPercentInput = prompt(`Bu satış için Ana Karakter Payı Yüzdesini Değiştirin (%):`, item.mainCharPercentApplied);
+            if (newMainPercentInput !== null && newMainPercentInput.trim() !== "") {
+                item.mainCharPercentApplied = parseFloat(newMainPercentInput) || 0;
             }
         }
 
@@ -687,7 +741,8 @@
                 sellDate: dateString,
                 sellPrice: parsedSellPrice,
                 sellGbRate: parsedSellGbRate,
-                taxRateApplied: chosenTaxRate
+                taxRateApplied: chosenTaxRate,
+                mainCharPercentApplied: mainCharPercent
             };
 
             calculateItemFinances(soldPart);
@@ -699,6 +754,7 @@
             item.sellPrice = parsedSellPrice;
             item.sellGbRate = parsedSellGbRate;
             item.taxRateApplied = chosenTaxRate;
+            item.mainCharPercentApplied = mainCharPercent;
             calculateItemFinances(item);
         }
 
@@ -764,8 +820,8 @@
         let totalProfitTl = 0;
         let stockValueTl = 0;
         let stockCount = 0;
-        let totalTaxCoins = 0;
-        let totalTaxTl = 0;
+        let totalMainCharCoins = 0;
+        let totalMainCharTl = 0;
 
         pazarItems.forEach(item => {
             let remaining = item.totalQty - item.soldQty;
@@ -777,9 +833,9 @@
                 
                 totalProfitCoins += item.netProfit || 0;
                 totalProfitTl += item.tlProfit || 0;
-                
-                totalTaxCoins += item.taxPaid || 0;
-                totalTaxTl += ((item.taxPaid || 0) / 100000000) * item.sellGbRate;
+
+                totalMainCharCoins += item.mainCharCoinsShare || 0;
+                totalMainCharTl += item.mainCharTlShare || 0;
             }
             
             if (remaining > 0) {
@@ -792,10 +848,12 @@
         document.getElementById('statTotalSalesCoins').innerText = formatCoins(totalSalesCoins);
         document.getElementById('statTotalProfitTl').innerText = totalProfitTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
         document.getElementById('statTotalProfitCoins').innerText = formatCoins(totalProfitCoins) + " net c";
+        
+        document.getElementById('statMainCharTl').innerText = totalMainCharTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
+        document.getElementById('statMainCharCoins').innerText = formatCoins(totalMainCharCoins);
+        
         document.getElementById('statStockValueTl').innerText = stockValueTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
         document.getElementById('statStockCount').innerText = `${stockCount} Çeşit Mal Sırada`;
-        document.getElementById('statTotalTaxTl').innerText = totalTaxTl.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL";
-        document.getElementById('statTotalTaxCoins').innerText = formatCoins(totalTaxCoins);
 
         if (totalProfitTl >= 0) {
             document.getElementById('statTotalProfitTl').className = "stat-value text-pos";
@@ -834,6 +892,13 @@
             
             let qtyString = isFullySold ? `${item.totalQty} Adet (Bitti)` : `${item.soldQty} / ${item.totalQty} <span class="tag-qty">Stok: ${remaining}</span>`;
 
+            let mainCharShareString = "-";
+            if (item.sellPrice !== null && item.netProfit > 0) {
+                mainCharShareString = `<div class="text-main">${formatCoins(item.mainCharCoinsShare)}</div>
+                                       <div style="font-size:12px; color:var(--text-muted);">${item.mainCharTlShare.toLocaleString('tr-TR', {maximumFractionDigits:2})} TL</div>
+                                       <span class="tag-main-share">%${item.mainCharPercentApplied} Pay</span>`;
+            }
+
             tr.innerHTML = `
                 <td class="item-name-cell">${item.name}</td>
                 <td>${qtyString}</td>
@@ -844,6 +909,7 @@
                 <td style="color: #f97316;">${item.sellPrice ? formatCoins(item.taxPaid) + taxBadge : "-"}</td>
                 <td class="${coinsProfitClass}">${item.netProfit !== null ? formatCoins(item.netProfit) : "-"}</td>
                 <td class="${tlProfitClass}">${item.tlProfit !== null ? item.tlProfit.toLocaleString('tr-TR', {maximumFractionDigits:2}) + " TL" : "-"}</td>
+                <td>${mainCharShareString}</td>
                 <td style="text-align: center;">
                     ${remaining > 0 ? `<button class="btn-action btn-sell" onclick="markAsSold(${item.id})">Satış Gir</button>` : ''}
                     <button class="btn-action btn-edit" onclick="editRecordPrices(${item.id})">Düzenle</button>
